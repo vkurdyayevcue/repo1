@@ -1,0 +1,67 @@
+# https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+
+executors:
+  executor-macos:
+    macos:
+      xcode: "13.3.1"
+    resource_class: medium
+#    working_directory: /Users/distiller/project
+    environment:
+      # Set LC_ALL and LANG for fastlane
+      LC_ALL: "en_US.UTF-8"
+      LANG: "en_US.UTF-8"
+      FL_OUTPUT_DIR: output
+
+jobs:
+  job_test:
+    description: Run unit tests
+    executor: executor-macos
+    steps:
+      - checkout
+      - run:
+          name: Create hello
+          command: |
+            ls -lah  $CIRCLE_WORKING_DIRECTORY/tests
+            echo $CIRCLE_PROJECT_REPONAME
+            echo $CIRCLE_REPOSITORY_URL
+            echo $GIT_TOKEN
+            echo "Hello world" > hello.txt
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./hello.txt
+            - ./file.txt
+
+  job_test1:
+    description: Run unit tests
+    executor: executor-macos
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Git checkout
+          command: |
+            git clone https://$GIT_TOKEN@github.com/vkurdyayevcue/repo2
+      - run:
+          name: ls
+          command: |
+            cd repo2
+            ls -lah
+            pip3 install pytest
+            pytest tests/
+
+
+
+workflows:
+  "Test":
+    jobs:
+      - job_test:
+          context:
+            - Git
+      - job_test1:
+          context:
+            - Git
+          requires:
+            - job_test
